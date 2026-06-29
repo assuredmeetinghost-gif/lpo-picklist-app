@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""LPO → Sales Order Pick List  ·  Streamlit Web App"""
+"""LPO -> Sales Order Pick List  .  Streamlit Web App"""
 import os, pathlib, sys, tempfile
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="LPO → Pick List", page_icon="📋", layout="wide")
+st.set_page_config(page_title="LPO -> Pick List", page_icon="clipboard", layout="wide")
 
 CSS = """
 <style>
@@ -53,37 +53,63 @@ CSS = """
 
 [data-testid="stStatus"],[data-testid="stExpander"] { border-radius:10px!important; }
 [data-testid="stExpander"] { background:white; }
+
+/* Model radio styled as segmented control */
+div[data-testid="stRadio"] > label { display:none!important; }
+div[data-testid="stRadio"] > div {
+  background:white; border-radius:10px; padding:10px 14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06); display:flex; gap:8px; }
+div[data-testid="stRadio"] > div > label {
+  display:flex!important; align-items:center; gap:8px;
+  border:1.5px solid #CBD5E1; border-radius:8px; padding:9px 20px;
+  font-size:13px; font-weight:500; cursor:pointer;
+  transition:all .15s; color:#374151!important; background:white; flex:1;
+  justify-content:center; }
+div[data-testid="stRadio"] > div > label:has(input:checked) {
+  border-color:#1B3A6B!important; background:#EEF2FF!important;
+  color:#1B3A6B!important; font-weight:700!important; }
+div[data-testid="stRadio"] > div > label > div:first-child { display:none!important; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# Sidebar
 LBL = '<p style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.5);margin:{} 0 4px">{}</p>'
 with st.sidebar:
-    st.markdown("## ⚙️ Settings")
+    st.markdown("## Settings")
     st.divider()
     st.markdown(LBL.format("0","Anthropic API Key"), unsafe_allow_html=True)
     api_key = st.text_input("k", type="password", placeholder="sk-ant-api03-...", label_visibility="collapsed")
-    st.markdown(LBL.format("14px","AI Model"), unsafe_allow_html=True)
-    model = st.selectbox("m", ["claude-opus-4-8","claude-sonnet-4-6"], index=0, label_visibility="collapsed")
-    st.caption("Opus 4 — most accurate (handwritten)\nSonnet 4 — faster, cheaper (printed)")
     st.divider()
-    st.markdown('<p style="font-size:10px;color:rgba(255,255,255,.35);line-height:1.6">Powered by Claude Vision · PyMuPDF · openpyxl<br>Supports printed, scanned &amp; handwritten orders.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:10px;color:rgba(255,255,255,.35);line-height:1.6">Powered by Claude Vision - PyMuPDF - openpyxl<br>Supports printed, scanned and handwritten orders.</p>', unsafe_allow_html=True)
 
-# ── Header ────────────────────────────────────────────────────────────────────
+# Header
 st.markdown("""
 <div style="background:white;border-radius:14px;padding:22px 28px;
 box-shadow:0 1px 6px rgba(27,58,107,.10);border-left:5px solid #1B3A6B;
 margin-bottom:20px;display:flex;align-items:center;gap:18px;">
-<div style="font-size:40px;line-height:1">📋</div>
-<div><h1 style="color:#1B3A6B;font-size:22px;font-weight:700;margin:0;letter-spacing:-.3px">
-LPO → Sales Order Pick List</h1>
+<div style="font-size:40px;line-height:1">&#128203;</div>
+<div><h1 style="color:#1B3A6B;font-size:22px;font-weight:700;margin:0">
+LPO to Sales Order Pick List</h1>
 <p style="color:#6B7280;font-size:13px;margin:5px 0 0">
 Upload a Purchase Order PDF (printed, scanned, or handwritten).
 Claude Vision reads every page and builds a warehouse-ready Pick List.</p></div></div>
 """, unsafe_allow_html=True)
 
-# ── Upload ────────────────────────────────────────────────────────────────────
+# Model selector (always visible)
+model = st.radio(
+    "Model",
+    options=["claude-opus-4-8", "claude-sonnet-4-6"],
+    format_func=lambda x: (
+        "Opus 4  -  Most accurate  (best for handwritten / scanned forms)"
+        if x == "claude-opus-4-8"
+        else "Sonnet 4  -  Faster & cheaper  (great for clean printed LPOs)"
+    ),
+    horizontal=True,
+    label_visibility="collapsed",
+)
+
+# Upload
 uploaded = st.file_uploader("Upload LPO", type=["pdf","png","jpg","jpeg"], accept_multiple_files=False, label_visibility="collapsed")
 
 if not uploaded:
@@ -92,24 +118,25 @@ if not uploaded:
 <p style="font-weight:600;color:#1B3A6B;font-size:15px;margin:0 0 14px">How it works</p>
 <ol style="color:#6B7280;font-size:14px;line-height:2.1;padding-left:22px;margin:0">
 <li>Enter your Anthropic API key in the sidebar</li>
-<li>Upload any LPO / Purchase Order PDF above</li>
-<li>Click <strong style="color:#1B3A6B">Generate</strong> — Claude reads every page, even rotated or two-column layouts</li>
-<li>Preview the line items, then <strong>print</strong> or <strong>download as Excel</strong></li>
+<li>Select the AI model above</li>
+<li>Upload any LPO / Purchase Order PDF</li>
+<li>Click <strong style="color:#1B3A6B">Generate</strong> - Claude reads every page</li>
+<li>Preview the line items, then print or download as Excel</li>
 </ol></div>""", unsafe_allow_html=True)
     st.stop()
 
 c_info, c_btn = st.columns([4, 1])
 with c_info:
-    st.markdown(f'<div style="background:white;border-radius:10px;padding:13px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);font-size:14px;">📄 <strong>{uploaded.name}</strong> &nbsp;·&nbsp; <span style="color:#6B7280">{uploaded.size//1024} KB</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="background:white;border-radius:10px;padding:13px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);font-size:14px;">&#128196; <strong>{uploaded.name}</strong> &nbsp;-&nbsp; <span style="color:#6B7280">{uploaded.size//1024} KB</span></div>', unsafe_allow_html=True)
 with c_btn:
-    run = st.button("▶ Generate", type="primary", use_container_width=True)
+    run = st.button("Generate", type="primary", use_container_width=True)
 
 if not run:
     st.stop()
 
 effective_key = (api_key or "").strip() or os.environ.get("ANTHROPIC_API_KEY","")
 if not effective_key:
-    st.error("🔑 Enter your Anthropic API key in the sidebar.")
+    st.error("No API key. Enter your Anthropic API key in the sidebar.")
     st.stop()
 
 os.environ["ANTHROPIC_API_KEY"] = effective_key
@@ -118,7 +145,7 @@ if APP_DIR not in sys.path:
     sys.path.insert(0, APP_DIR)
 import lpo_to_picklist as lpo
 
-# ── Extract + build ───────────────────────────────────────────────────────────
+# Extract + build
 data = None; xlsx_bytes = None
 name = pathlib.Path(uploaded.name).stem
 
@@ -129,32 +156,32 @@ with tempfile.TemporaryDirectory() as _tmp:
     lpo_path.write_bytes(uploaded.getvalue())
     out_dir = tmp/"output"
 
-    with st.status("Reading LPO with Claude Vision…", expanded=True) as status:
+    with st.status("Reading LPO with Claude Vision...", expanded=True) as status:
         def progress(msg):
             st.write(msg)
         try:
             data = lpo.extract_data(str(lpo_path), model=model, use_cache=False, progress=progress)
         except SystemExit:
-            status.update(label="❌ API key rejected", state="error")
-            st.error("API key rejected — verify it has credits."); st.stop()
+            status.update(label="API key rejected", state="error")
+            st.error("API key rejected - verify it has credits."); st.stop()
         except Exception as exc:
-            status.update(label="❌ Extraction failed", state="error")
+            status.update(label="Extraction failed", state="error")
             st.exception(exc); st.stop()
 
         if not data or not data.get("items"):
-            status.update(label="⚠️ No ordered items found", state="error")
+            status.update(label="No ordered items found", state="error")
             st.warning("No items detected. Try Opus 4 or a clearer scan."); st.stop()
 
         try:
             xlsx_path, _ = lpo.build_outputs(data, out_dir, name, make_pdf=False)
             xlsx_bytes = pathlib.Path(xlsx_path).read_bytes()
         except Exception as exc:
-            status.update(label="❌ Excel build failed", state="error")
+            status.update(label="Excel build failed", state="error")
             st.exception(exc); st.stop()
 
-        status.update(label="✅ Pick List ready!", state="complete")
+        status.update(label="Pick List ready!", state="complete")
 
-# ── Metrics ───────────────────────────────────────────────────────────────────
+# Metrics
 def _metric(label, value):
     return (f'<div style="background:white;border-radius:10px;padding:16px 18px;text-align:center;'
             f'box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #1B3A6B;">'
@@ -165,31 +192,31 @@ st.markdown(
     f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0 16px">'
     + _metric("Line Items", data["total_lines"])
     + _metric("Total Qty", int(data["total_qty"]))
-    + f'<div style="background:white;border-radius:10px;padding:16px 18px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #1B3A6B;"><div style="font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#9CA3AF;margin-bottom:6px">Customer</div><div style="font-size:15px;font-weight:700;color:#1B3A6B;padding-top:6px">{(data.get("customer") or "—")[:26]}</div></div>'
+    + f'<div style="background:white;border-radius:10px;padding:16px 18px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06);border-top:3px solid #1B3A6B;"><div style="font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#9CA3AF;margin-bottom:6px">Customer</div><div style="font-size:15px;font-weight:700;color:#1B3A6B;padding-top:6px">{(data.get("customer") or "-")[:26]}</div></div>'
     + '</div>',
     unsafe_allow_html=True
 )
 
-# ── Print HTML builder ────────────────────────────────────────────────────────
+# Print HTML builder
 def _build_print_html(d):
     rows = "".join(
-        f'<tr><td class="c">{i}</td><td class="c code">{it.get("gtin","") or "—"}</td>'
+        f'<tr><td class="c">{i}</td><td class="c code">{it.get("gtin","") or "-"}</td>'
         f'<td class="l desc">{it.get("desc","")}</td><td class="c">{it.get("uom","NOS")}</td>'
         f'<td class="c"><input type="checkbox"></td>'
         f'<td class="c qty">{it.get("qty","")}</td><td class="c"></td></tr>'
         for i, it in enumerate(d["items"], 1)
     )
     m = {
-        "customer": d.get("customer","") or "—",
-        "order_no": d.get("order_no","") or "—",
-        "order_date": d.get("order_date","") or "—",
+        "customer": d.get("customer","") or "-",
+        "order_no": d.get("order_no","") or "-",
+        "order_date": d.get("order_date","") or "-",
         "source_file": d.get("source_file",""),
-        "order_type": d.get("order_type","") or "—",
+        "order_type": d.get("order_type","") or "-",
         "currency": d.get("currency","OMR"),
         "total_qty": int(d["total_qty"]),
     }
     return f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>Pick List – {m['customer']}</title>
+<title>Pick List</title>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:Arial,sans-serif;font-size:12px;background:#EEF2FF;padding:16px;color:#111827}}
@@ -223,8 +250,8 @@ input[type="checkbox"]{{width:15px;height:15px;accent-color:#1B3A6B;cursor:point
 }}
 </style></head><body>
 <div class="wrap">
-<div class="toolbar"><button class="btn" onclick="window.print()">🖨️&nbsp; Print Pick List</button></div>
-<div class="doc-title">SALES ORDER — PICK LIST</div>
+<div class="toolbar"><button class="btn" onclick="window.print()">Print Pick List</button></div>
+<div class="doc-title">SALES ORDER - PICK LIST</div>
 <div class="meta">
 <div><b>Customer:</b> {m['customer']}</div><div><b>Order No:</b> {m['order_no']}</div>
 <div><b>Order Date:</b> {m['order_date']}</div><div><b>Source File:</b> {m['source_file']}</div>
@@ -233,7 +260,7 @@ input[type="checkbox"]{{width:15px;height:15px;accent-color:#1B3A6B;cursor:point
 <table><thead><tr>
 <th style="width:32px">SI</th><th style="width:100px">GTIN/Code</th>
 <th class="l">Description</th><th style="width:44px">UOM</th>
-<th style="width:40px">✓</th><th style="width:46px">Qty</th><th style="width:52px">Picked</th>
+<th style="width:40px">Check</th><th style="width:46px">Qty</th><th style="width:52px">Picked</th>
 </tr></thead>
 <tbody>{rows}
 <tr class="tot"><td colspan="5" style="text-align:right;padding-right:10px">Total Quantity:</td>
@@ -245,16 +272,16 @@ input[type="checkbox"]{{width:15px;height:15px;accent-color:#1B3A6B;cursor:point
 <div class="sig">Picked By: ____________________</div>
 </div></div></body></html>"""
 
-# ── Render pick list preview ──────────────────────────────────────────────────
+# Render pick list preview
 iframe_h = max(500, min(1100, 400 + len(data["items"]) * 30))
-st.markdown('<div style="background:white;border-radius:12px;padding:18px 20px 6px;box-shadow:0 1px 6px rgba(0,0,0,.07);"><p style="font-weight:700;color:#1B3A6B;font-size:14px;margin:0 0 12px">📋 Pick List Preview &amp; Print</p>', unsafe_allow_html=True)
+st.markdown('<div style="background:white;border-radius:12px;padding:18px 20px 6px;box-shadow:0 1px 6px rgba(0,0,0,.07);"><p style="font-weight:700;color:#1B3A6B;font-size:14px;margin:0 0 12px">Pick List Preview and Print</p>', unsafe_allow_html=True)
 components.html(_build_print_html(data), height=iframe_h, scrolling=True)
 st.markdown("</div>", unsafe_allow_html=True)
 
-# ── Download Excel ────────────────────────────────────────────────────────────
+# Download Excel
 st.markdown("<div style='margin-top:14px'>", unsafe_allow_html=True)
 st.download_button(
-    label="⬇️  Download Pick List (.xlsx)",
+    label="Download Pick List (.xlsx)",
     data=xlsx_bytes,
     file_name=f"PickList_{name}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -262,5 +289,5 @@ st.download_button(
 )
 st.markdown("</div>", unsafe_allow_html=True)
 
-with st.expander("🗂 Raw extracted JSON"):
+with st.expander("Raw extracted JSON"):
     st.json(data)
