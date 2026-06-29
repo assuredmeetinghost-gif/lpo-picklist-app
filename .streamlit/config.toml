@@ -1,8 +1,12 @@
 [theme]
-primaryColor = "#1B3A6B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F5FF"
-textColor = "#111111"
+primaryColor       = "#1B3A6B"
+backgroundColor    = "#EEF2FF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor          = "#111827"
 
 [server]
 maxUploadSize = 50
+
+[client]
+# "minimal" removes the Share / Edit / GitHub toolbar that appears on Streamlit Cloud
+toolbarMode = "minimal"
